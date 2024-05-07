@@ -1,3 +1,4 @@
 dnspython==2.6.1
 python-dotenv==0.10.1
-requests==2.21.0
+requests==2.31.0
+termcolor==2.4.0
