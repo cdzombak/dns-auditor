@@ -9,6 +9,7 @@ import requests
 import sys
 
 from dns import resolver
+from termcolor import cprint
 
 from dotenv import load_dotenv
 
@@ -145,7 +146,7 @@ class Auditor(object):
         """
         Returns False if any anomalies were found; True otherwise.
         """
-        print("Auditing {:s}...".format(domain_name))
+        cprint("Auditing {:s} ...".format(domain_name), 'white')
         records = self.do_api.get_all_dns_records(domain_name)
         retv = True
         for r in records:
@@ -159,13 +160,14 @@ class Auditor(object):
                     recname=r['name'], ip=r['data']))
                 continue
             except resolver.LifetimeTimeout:
-                print("[i] {recname:s}: rDNS lookup for {ip:s} timed out"
-                      .format(recname=r['name'], ip=r['data']))
-                retv = False
+                cprint("[i] {recname:s}: rDNS lookup for {ip:s} timed out"
+                       .format(recname=r['name'], ip=r['data']),
+                       'yellow')
                 continue
             except dns.exception.DNSException as e2:
-                print("[!] {recname:s}: rDNS lookup for {ip:s} failed: {exc:s}"
-                      .format(recname=r['name'], ip=r['data'], exc=str(e2)))
+                cprint("[!] {recname:s}: rDNS lookup for {ip:s} failed: {exc:s}"
+                       .format(recname=r['name'], ip=r['data'], exc=str(e2)),
+                       'red')
                 retv = False
                 continue
             for a in rev_answer:
@@ -175,19 +177,22 @@ class Auditor(object):
                     fwd_name = dns.name.from_text(str(a))
                     fwd_answer = self.resolver.resolve(fwd_name, r['type'], lifetime=10.0)
                 except (resolver.NoAnswer, resolver.NXDOMAIN, resolver.NoNameservers):
-                    print("[!] {recname:s}: Reverse DNS for {ip:s} is {revname:s}, but no forward "
-                          "{type:s} record for {revname:s} exists."
-                          .format(recname=r['name'], ip=r['data'], revname=str(a), type=r['type']))
+                    cprint(
+                        "[!] {recname:s}: Reverse DNS for {ip:s} is {revname:s}, but no forward "
+                        "{type:s} record for {revname:s} exists."
+                        .format(recname=r['name'], ip=r['data'], revname=str(a), type=r['type']),
+                        'red')
                     retv = False
                     continue
                 except resolver.LifetimeTimeout:
-                    print("[!] {recname:s}: Reverse DNS for {ip:s} is {revname:s}, but forward "
-                          "{type:s} lookup for {revname:s} timed out"
-                          .format(recname=r['name'], ip=r['data'], revname=str(a), type=r['type']))
-                    retv = False
+                    cprint("[!] {recname:s}: Reverse DNS for {ip:s} is {revname:s}, but forward "
+                           "{type:s} lookup for {revname:s} timed out"
+                           .format(recname=r['name'], ip=r['data'], revname=str(a),
+                                   type=r['type']),
+                           'yellow')
                     continue
                 except dns.exception.DNSException as e2:
-                    print(
+                    cprint(
                         "[!] {recname:s}: Reverse DNS for {ip:s} is {revname:s}, but forward "
                         "{type:s} lookup for {revname:s} failed: {exc:s}".format(
                             recname=r['name'],
@@ -195,14 +200,14 @@ class Auditor(object):
                             revname=str(a),
                             type=r['type'],
                             exc=str(e2),
-                        ))
+                        ), 'red')
                     retv = False
                     continue
                 for fwd_ip in fwd_answer:
                     if self.verbose:
                         print(f"    {r['name']}: {r['type']} -> {r['data']} -> {a} -> {fwd_ip}")
                     if str(fwd_ip) != r['data']:
-                        print(
+                        cprint(
                             "[!] {recname:s}: Reverse DNS for {ip:s} is {revname:s} which has: "
                             "{type:s} -> {fwd_ip:s}.".format(
                                 recname=r['name'],
@@ -210,9 +215,11 @@ class Auditor(object):
                                 revname=str(a),
                                 type=r['type'],
                                 fwd_ip=str(fwd_ip),
-                            ))
+                            ), 'red')
                         retv = False
                         continue
+        if retv:
+            cprint("... ok", 'green')
         return retv
 
 
@@ -234,15 +241,19 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.fail_return in (1, 2):
-        eprint(
+        cprint(
             "Error: Return codes 1 and 2 are reserved for general "
-            "and authentication errors, respectively."
+            "and authentication errors, respectively.",
+            'red', file=sys.stderr,
         )
         sys.exit(1)
 
     do_token = os.getenv('DIGITALOCEAN_TOKEN')
     if not do_token:
-        eprint("DigitalOcean API token must be set using an environment variable.")
+        cprint(
+            "DigitalOcean API token must be set using an environment variable.",
+            'red', file=sys.stderr,
+        )
         eprint("Copy .env.sample to .env and fill it out to provide credentials.")
         sys.exit(2)
     do_api = DigitalOceanAPI(do_token)
@@ -250,11 +261,17 @@ if __name__ == '__main__':
     try:
         do_api.check_auth()
     except AuthException:
-        eprint("DigitalOcean authentication check failed.")
+        cprint(
+            "DigitalOcean authentication check failed.",
+            'red', file=sys.stderr,
+        )
         eprint("Check your credentials and try again.")
         sys.exit(2)
     except APIException as e:
-        eprint("DigitalOcean authentication check failed.")
+        cprint(
+            "DigitalOcean authentication check failed.",
+            'red', file=sys.stderr,
+        )
         eprint(e.human_str)
         sys.exit(2)
 
@@ -272,7 +289,10 @@ if __name__ == '__main__':
         eprint(e.human_str)
         sys.exit(1)
     except AuthException:
-        eprint("Check your DigitalOcean credentials and try again.")
+        cprint(
+            "Check your DigitalOcean credentials and try again.",
+            'red', file=sys.stderr,
+        )
         sys.exit(2)
 
     if not result:
