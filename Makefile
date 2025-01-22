@@ -1,11 +1,9 @@
 SHELL:=/usr/bin/env bash
 VIRTUALENV_DIR=venv
 
-.PHONY: all
-all: help
 .PHONY: help
 help: # via https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_/-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 .PHONY: dev/bootstrap
 dev/bootstrap: ## Set up local virtualenv
