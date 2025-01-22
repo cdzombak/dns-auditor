@@ -10,7 +10,7 @@ from dns import resolver
 from dotenv import load_dotenv
 from termcolor import cprint
 
-from audits import rdns, caa, cname
+from audits import rdns, caa, cname, mail
 from digitalocean_api import DigitalOceanAPI
 from eprint import eprint
 from exc import AuthException, APIException
@@ -23,10 +23,10 @@ class Auditor(object):
     _resolver: resolver.Resolver
     _do_api: typing.Optional[DigitalOceanAPI]
 
-    def __init__(self, policy: configparser.ConfigParser, verbose: bool, do_api_instance: DigitalOceanAPI):
-        self._policy = policy
-        self._do_api = do_api_instance
-        self._verbose = verbose
+    def __init__(self, p: configparser.ConfigParser, v: bool, do: DigitalOceanAPI):
+        self._policy = p
+        self._do_api = do
+        self._verbose = v
         self._resolver = resolver.Resolver(configure=False)
         self._resolver.nameservers = [
             '8.8.8.8', '1.1.1.1',
@@ -35,7 +35,7 @@ class Auditor(object):
 
     def audit_all(self):
         """
-        Returns False if any anomalies were found; True otherwise.
+        Returns False if any failures or anomalies were found; True otherwise.
         """
         domain_names = [d['name'] for d in self._do_api.get_all_domains()]
         retv = True
@@ -45,13 +45,14 @@ class Auditor(object):
 
     def audit(self, domain_name: str):
         """
-        Returns False if any anomalies were found; True otherwise.
+        Returns False if any failures or anomalies were found; True otherwise.
         """
         cprint("Auditing {:s} ...".format(domain_name), 'white')
 
         all_records = [record_from_digitalocean(r) for r in self._do_api.get_all_dns_records(domain_name)]
 
         retv = rdns.audit(policy['rdns'], self._resolver, self._verbose, all_records) \
+            and mail.audit(policy['mail'], self._resolver, self._verbose, all_records) \
             and caa.audit(policy['caa'], self._verbose, all_records) \
             and cname.audit(self._resolver, self._verbose, all_records)
 
@@ -76,6 +77,8 @@ if __name__ == '__main__':
                         help="Print each check as it is performed, regardless of outcome.")
     parser.add_argument('--policy', type=str,
                         help="INI policy file.")
+    parser.add_argument('--host', type=str, default='do',
+                        help="Hosting service for your DNS records. One of: do (DigitalOcean).")
     args = parser.parse_args()
 
     do_token = os.getenv('DIGITALOCEAN_TOKEN')
@@ -113,13 +116,19 @@ if __name__ == '__main__':
         'RequireIssue': 'no',
         'RequireIodef': 'no',
     }
+    policy['mail'] = {
+        'RequireSPF': 'no',
+        'RequireDMARC': 'no',
+    }
     if args.policy:
         policy.read(args.policy)
+
+    auditor = Auditor(policy, args.verbose, do_api)
 
     domain_name = None
     if args.domain:
         domain_name = args.domain.lower().strip()
-    auditor = Auditor(policy, args.verbose, do_api)
+
     try:
         if domain_name:
             result = auditor.audit(domain_name)
@@ -130,7 +139,7 @@ if __name__ == '__main__':
         sys.exit(1)
     except AuthException:
         cprint(
-            "Check your DigitalOcean credentials and try again.",
+            "Check your credentials and try again.",
             'red', file=sys.stderr,
         )
         sys.exit(2)
