@@ -1,3 +1,4 @@
+import configparser
 import ipaddress
 import typing
 
@@ -11,7 +12,7 @@ from record import Record
 def is_tailscale(ip: typing.Union[ipaddress.IPv4Address, ipaddress.IPv6Address]) -> bool:
     return ipaddress.ip_address(ip) in ipaddress.ip_network("100.64.0.0/10")
 
-def audit(policy, res: resolver.Resolver, verbose: bool, records: typing.List[Record]) -> bool:
+def audit(policy: configparser.SectionProxy, res: resolver.Resolver, verbose: bool, records: typing.List[Record]) -> bool:
     """
     Check a domain's A and AAAA records against rDNS for the IPs they point to.
     Returns False if any anomalies were found; True otherwise.

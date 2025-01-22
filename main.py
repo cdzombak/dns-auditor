@@ -23,10 +23,10 @@ class Auditor(object):
     _resolver: resolver.Resolver
     _do_api: typing.Optional[DigitalOceanAPI]
 
-    def __init__(self, policy: configparser.ConfigParser, do_api_instance: DigitalOceanAPI):
+    def __init__(self, policy: configparser.ConfigParser, verbose: bool, do_api_instance: DigitalOceanAPI):
         self._policy = policy
         self._do_api = do_api_instance
-        self._verbose = False
+        self._verbose = verbose
         self._resolver = resolver.Resolver(configure=False)
         self._resolver.nameservers = [
             '8.8.8.8', '1.1.1.1',
@@ -119,8 +119,7 @@ if __name__ == '__main__':
     domain_name = None
     if args.domain:
         domain_name = args.domain.lower().strip()
-    auditor = Auditor(policy, do_api)
-    auditor.verbose = args.verbose
+    auditor = Auditor(policy, args.verbose, do_api)
     try:
         if domain_name:
             result = auditor.audit(domain_name)

@@ -1,3 +1,4 @@
+import configparser
 import typing
 
 import validators
@@ -6,7 +7,7 @@ from termcolor import cprint
 from record import Record
 
 
-def audit(policy, verbose: bool, records: typing.List[Record]) -> bool:
+def audit(policy: configparser.SectionProxy, verbose: bool, records: typing.List[Record]) -> bool:
     """
     Checks whether CAA records are valid.
     If specified by policy, requires issue and iodef fields to be present.
@@ -69,8 +70,9 @@ def audit(policy, verbose: bool, records: typing.List[Record]) -> bool:
                 retv = False
                 continue
 
-        print("[i] {n:s}: CAA record is valid: {data:s}".format(
-            n=r.name, data=r.data))
+        if verbose:
+            print("    {n:s}: CAA {data:s}".format(
+                n=r.name, data=r.data))
 
         if r.name == '@' and (tag == 'issue' or tag == 'issuewild'):
             has_issue = True
