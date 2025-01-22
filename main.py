@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import configparser
 import os
 import sys
 
@@ -17,7 +18,8 @@ from exc import AuthException, APIException
 class Auditor(object):
     verbose: bool
 
-    def __init__(self, do_api_instance):
+    def __init__(self, policy, do_api_instance):
+        self.policy = policy
         self.do_api = do_api_instance
         self.verbose = False
         self.resolver = resolver.Resolver(configure=False)
@@ -43,7 +45,7 @@ class Auditor(object):
         cprint("Auditing {:s} ...".format(domain_name), 'white')
         all_records = self.do_api.get_all_dns_records(domain_name)
         retv = True
-        retv = retv and rdns.audit(self.resolver, self.verbose, all_records)
+        retv = retv and rdns.audit(policy['rdns'], self.resolver, self.verbose, all_records)
         if retv:
             cprint("... ok", 'green')
         return retv
@@ -66,6 +68,8 @@ if __name__ == '__main__':
                         help="Log API rate limit information to stderr.")
     parser.add_argument('--verbose', action='store_true',
                         help="Print each check as it is performed, regardless of outcome.")
+    parser.add_argument('--policy', type=str,
+                        help="INI policy file.")
     args = parser.parse_args()
 
     if args.fail_return in (1, 2):
@@ -103,10 +107,17 @@ if __name__ == '__main__':
         eprint(e.human_str)
         sys.exit(2)
 
+    policy = configparser.ConfigParser()
+    policy['rdns'] = {
+        'FailOnMissingPTR': 'no',
+    }
+    if args.policy:
+        policy.read(args.policy)
+
     domain_name = None
     if args.domain:
         domain_name = args.domain.lower().strip()
-    auditor = Auditor(do_api)
+    auditor = Auditor(policy, do_api)
     auditor.verbose = args.verbose
     try:
         if domain_name:

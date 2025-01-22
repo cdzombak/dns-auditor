@@ -8,7 +8,7 @@ from termcolor import cprint
 def is_tailscale(ip: typing.Union[ipaddress.IPv4Address, ipaddress.IPv6Address]) -> bool:
     return ipaddress.ip_address(ip) in ipaddress.ip_network("100.64.0.0/10")
 
-def audit(res: resolver.Resolver, verbose: bool, records: typing.List) -> bool:
+def audit(policy, res: resolver.Resolver, verbose: bool, records: typing.List) -> bool:
     """
     Check a domain's A and AAAA records against rDNS for the IPs they point to.
     Returns False if any anomalies were found; True otherwise.
@@ -30,13 +30,20 @@ def audit(res: resolver.Resolver, verbose: bool, records: typing.List) -> bool:
             ptr_addr = dns.reversename.from_address(r['data'])
             rev_answer = res.resolve(ptr_addr, "PTR", lifetime=10.0)
         except (resolver.NoAnswer, resolver.NXDOMAIN, resolver.NoNameservers):
-            print("[i] {recname:s}: No rDNS found for {ip:s}".format(
-                recname=r['name'], ip=r['data']))
+            if policy.getboolean('FailOnMissingPTR'):
+                cprint("[!] {recname:s}: No rDNS found for {ip:s}".format(
+                    recname=r['name'], ip=r['data']),
+                       'red')
+                retv = False
+            else:
+                print("[i] {recname:s}: No rDNS found for {ip:s}".format(
+                    recname=r['name'], ip=r['data']))
             continue
         except resolver.LifetimeTimeout:
             cprint("[i] {recname:s}: rDNS lookup for {ip:s} timed out"
                    .format(recname=r['name'], ip=r['data']),
                    'yellow')
+            retv = False
             continue
         except dns.exception.DNSException as e2:
             cprint("[!] {recname:s}: rDNS lookup for {ip:s} failed: {exc:s}"
@@ -64,6 +71,7 @@ def audit(res: resolver.Resolver, verbose: bool, records: typing.List) -> bool:
                        .format(recname=r['name'], ip=r['data'], revname=str(a),
                                type=r['type']),
                        'yellow')
+                retv = False
                 continue
             except dns.exception.DNSException as e2:
                 cprint(

@@ -6,7 +6,7 @@
 * add CAA check
 * add DMARC check
 * update parser documentation/desc
-* update deps
+* formatting & linting
 * docs
 * versioning
 * docker releases
