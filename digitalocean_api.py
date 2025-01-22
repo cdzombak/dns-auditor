@@ -71,7 +71,21 @@ class DigitalOceanAPI(object):
         return self._get_decoded('account')
 
     def get_all_domains(self):
-        return self._get_decoded('domains')['domains']
+        page = 0
+        more = True
+        while more:
+            page += 1
+            resp = self._get_decoded('domains', params={'page': page})
+            for d in resp['domains']:
+                yield d
+            more = resp.get('links', {}).get('pages', {}).get('next') is not None
 
     def get_all_dns_records(self, domain):
-        return self._get_decoded('domains/{name:s}/records'.format(name=domain))['domain_records']
+        page = 0
+        more = True
+        while more:
+            page += 1
+            resp = self._get_decoded('domains/{name:s}/records'.format(name=domain), params={'page': page})
+            for r in resp['domain_records']:
+                yield r
+            more = resp.get('links', {}).get('pages', {}).get('next') is not None
