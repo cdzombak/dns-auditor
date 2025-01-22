@@ -1,9 +1,6 @@
 import typing
-import ipaddress
-from sys import hash_info
 
 import validators
-
 from termcolor import cprint
 
 from record import Record

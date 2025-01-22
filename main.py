@@ -5,7 +5,6 @@ import configparser
 import os
 import sys
 import typing
-from typing import Optional
 
 from dns import resolver
 from dotenv import load_dotenv

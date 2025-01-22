@@ -1,5 +1,5 @@
-import typing
 import ipaddress
+import typing
 
 import dns
 from dns import resolver
