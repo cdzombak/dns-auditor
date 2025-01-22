@@ -2,7 +2,6 @@
 
 ## TODO
 
-* rDNS - ignoring private & reserved CIDR blocks e.g. Tailscale
 * allow using multiple sources
 * add CAA check
 * add DMARC check

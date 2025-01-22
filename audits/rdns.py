@@ -1,8 +1,12 @@
 import typing
+import ipaddress
 
 import dns
 from dns import resolver
 from termcolor import cprint
+
+def is_tailscale(ip: typing.Union[ipaddress.IPv4Address, ipaddress.IPv6Address]) -> bool:
+    return ipaddress.ip_address(ip) in ipaddress.ip_network("100.64.0.0/10")
 
 def audit(res: resolver.Resolver, verbose: bool, records: typing.List) -> bool:
     """
@@ -12,6 +16,15 @@ def audit(res: resolver.Resolver, verbose: bool, records: typing.List) -> bool:
     retv = True
     for r in records:
         if r['type'] not in ('A', 'AAAA'):
+            continue
+        ipaddr = ipaddress.ip_address(r['data'])
+        if is_tailscale(ipaddr):
+            print("[i] {recname:s}: Points to Tailscale ({ip:s}); skipping".format(
+                recname=r['name'], ip=r['data']))
+            continue
+        if ipaddr.is_private:
+            print("[i] {recname:s}: Points to private IP ({ip:s}); skipping".format(
+                recname=r['name'], ip=r['data']))
             continue
         try:
             ptr_addr = dns.reversename.from_address(r['data'])
