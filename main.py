@@ -11,6 +11,7 @@ from termcolor import cprint
 
 from api.client import Client
 from api.digitalocean import DigitalOceanAPI
+from api.porkbun import PorkbunAPI
 from audits import rdns, caa, cname, mail
 from eprint import eprint
 from exc import AuthException, APIException
@@ -77,7 +78,7 @@ if __name__ == '__main__':
     parser.add_argument('--policy', type=str,
                         help="INI policy file.")
     parser.add_argument('--host', type=str, default='do',
-                        help="Hosting service for your DNS records. One of: do (DigitalOcean).")
+                        help="Hosting service for your DNS records. One of: do (DigitalOcean), pb (Porkbun).")
     args = parser.parse_args()
 
     client = None
@@ -109,6 +110,17 @@ if __name__ == '__main__':
             eprint(e.human_str)
             sys.exit(2)
         client = do_api
+    elif args.host == 'pb':
+        pb_api_key = os.getenv('PORKBUN_API_KEY')
+        pb_secret_key = os.getenv('PORKBUN_SECRET_KEY')
+        if not pb_api_key or not pb_secret_key:
+            cprint(
+                "Porkbun API key and secret must be set using environment variables.",
+                'red', file=sys.stderr,
+            )
+            eprint("Copy .env.sample to .env and fill it out to provide credentials.")
+            sys.exit(2)
+        client = PorkbunAPI(pb_api_key, pb_secret_key)
 
     if not client:
         eprint("Invalid --host given.")
