@@ -66,15 +66,10 @@ if __name__ == '__main__':
     load_dotenv()
 
     parser = argparse.ArgumentParser(
-        description="Check a domain's A and AAAA records against rDNS for the IPs they point to.",
-        epilog="Authentication:  Set your DigitalOcean API token in the DIGITALOCEAN_TOKEN "
-               "environment variable. It can also be provided via a .env file, in this directory "
-               "(see .env.sample).")
+        description="Check your DNS records for a variety of potential issues")
     parser.add_argument('--domain', type=str,
                         help="The domain to audit. "
                              "If left empty, all domains in the account will be audited.")
-    parser.add_argument('--fail-return', type=int, default=3,
-                        help="Return code in case audit problems were detected. Default: 3.")
     parser.add_argument('--debug-log-ratelimit', action='store_true',
                         help="Log API rate limit information to stderr.")
     parser.add_argument('--verbose', action='store_true',
@@ -82,14 +77,6 @@ if __name__ == '__main__':
     parser.add_argument('--policy', type=str,
                         help="INI policy file.")
     args = parser.parse_args()
-
-    if args.fail_return in (1, 2):
-        cprint(
-            "Error: Return codes 1 and 2 are reserved for general "
-            "and authentication errors, respectively.",
-            'red', file=sys.stderr,
-        )
-        sys.exit(1)
 
     do_token = os.getenv('DIGITALOCEAN_TOKEN')
     if not do_token:
@@ -150,4 +137,4 @@ if __name__ == '__main__':
         sys.exit(2)
 
     if not result:
-        sys.exit(args.fail_return)
+        sys.exit(3)
