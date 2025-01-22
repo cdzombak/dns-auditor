@@ -9,7 +9,7 @@ from termcolor import cprint
 from record import Record
 
 
-def audit(policy: configparser.SectionProxy, res: resolver.Resolver, verbose: bool, records: typing.List[Record]) -> bool:
+def audit(policy: configparser.SectionProxy, res: resolver.Resolver, verbose: bool, records: typing.Iterable[Record]) -> bool:
     """
     Checks that the domain's MX records point to names with A records.
     If a DMARC record exists, validates it.

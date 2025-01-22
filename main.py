@@ -4,28 +4,27 @@ import argparse
 import configparser
 import os
 import sys
-import typing
 
 from dns import resolver
 from dotenv import load_dotenv
 from termcolor import cprint
 
+from api.client import Client
+from api.digitalocean import DigitalOceanAPI
 from audits import rdns, caa, cname, mail
-from digitalocean_api import DigitalOceanAPI
 from eprint import eprint
 from exc import AuthException, APIException
-from record import record_from_digitalocean
 
 
 class Auditor(object):
     _policy: configparser.ConfigParser
     _verbose: bool
     _resolver: resolver.Resolver
-    _do_api: typing.Optional[DigitalOceanAPI]
+    _api_client: Client
 
-    def __init__(self, p: configparser.ConfigParser, v: bool, do: DigitalOceanAPI):
+    def __init__(self, p: configparser.ConfigParser, v: bool, cli: Client):
         self._policy = p
-        self._do_api = do
+        self._api_client = cli
         self._verbose = v
         self._resolver = resolver.Resolver(configure=False)
         self._resolver.nameservers = [
@@ -37,19 +36,19 @@ class Auditor(object):
         """
         Returns False if any failures or anomalies were found; True otherwise.
         """
-        domain_names = [d['name'] for d in self._do_api.get_all_domains()]
         retv = True
-        for n in domain_names:
-            retv = retv & self.audit(n)
+        domains = list(self._api_client.get_all_domains())
+        for d in domains:
+            retv = retv & self.audit(d)
         return retv
 
-    def audit(self, domain_name: str):
+    def audit(self, d: str):
         """
         Returns False if any failures or anomalies were found; True otherwise.
         """
-        cprint("Auditing {:s} ...".format(domain_name), 'white')
+        cprint("Auditing {:s} ...".format(d), 'white')
 
-        all_records = [record_from_digitalocean(r) for r in self._do_api.get_all_dns_records(domain_name)]
+        all_records = list(self._api_client.get_all_dns_records(d))
 
         retv = rdns.audit(policy['rdns'], self._resolver, self._verbose, all_records) \
             and mail.audit(policy['mail'], self._resolver, self._verbose, all_records) \
@@ -81,32 +80,39 @@ if __name__ == '__main__':
                         help="Hosting service for your DNS records. One of: do (DigitalOcean).")
     args = parser.parse_args()
 
-    do_token = os.getenv('DIGITALOCEAN_TOKEN')
-    if not do_token:
-        cprint(
-            "DigitalOcean API token must be set using an environment variable.",
-            'red', file=sys.stderr,
-        )
-        eprint("Copy .env.sample to .env and fill it out to provide credentials.")
-        sys.exit(2)
-    do_api = DigitalOceanAPI(do_token)
-    do_api.logRatelimit = args.debug_log_ratelimit
-    try:
-        do_api.check_auth()
-    except AuthException:
-        cprint(
-            "DigitalOcean authentication check failed.",
-            'red', file=sys.stderr,
-        )
-        eprint("Check your credentials and try again.")
-        sys.exit(2)
-    except APIException as e:
-        cprint(
-            "DigitalOcean authentication check failed.",
-            'red', file=sys.stderr,
-        )
-        eprint(e.human_str)
-        sys.exit(2)
+    client = None
+    if args.host == 'do':
+        do_token = os.getenv('DIGITALOCEAN_TOKEN')
+        if not do_token:
+            cprint(
+                "DigitalOcean API token must be set using an environment variable.",
+                'red', file=sys.stderr,
+            )
+            eprint("Copy .env.sample to .env and fill it out to provide credentials.")
+            sys.exit(2)
+        do_api = DigitalOceanAPI(do_token)
+        do_api.logRatelimit = args.debug_log_ratelimit
+        try:
+            do_api.check_auth()
+        except AuthException:
+            cprint(
+                "DigitalOcean authentication check failed.",
+                'red', file=sys.stderr,
+            )
+            eprint("Check your credentials and try again.")
+            sys.exit(2)
+        except APIException as e:
+            cprint(
+                "DigitalOcean authentication check failed.",
+                'red', file=sys.stderr,
+            )
+            eprint(e.human_str)
+            sys.exit(2)
+        client = do_api
+
+    if not client:
+        eprint("Invalid --host given.")
+        sys.exit(1)
 
     policy = configparser.ConfigParser()
     policy['rdns'] = {
@@ -123,7 +129,7 @@ if __name__ == '__main__':
     if args.policy:
         policy.read(args.policy)
 
-    auditor = Auditor(policy, args.verbose, do_api)
+    auditor = Auditor(policy, args.verbose, client)
 
     domain_name = None
     if args.domain:

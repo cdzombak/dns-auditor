@@ -7,7 +7,7 @@ from termcolor import cprint
 from record import Record
 
 
-def audit(policy: configparser.SectionProxy, verbose: bool, records: typing.List[Record]) -> bool:
+def audit(policy: configparser.SectionProxy, verbose: bool, records: typing.Iterable[Record]) -> bool:
     """
     Checks whether CAA records are valid.
     If specified by policy, requires issue and iodef fields to be present.

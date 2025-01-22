@@ -1,9 +1,39 @@
 import datetime
+import typing
 
 import requests
 
+from api.client import Client
 from eprint import eprint
 from exc import AuthException, APIException
+from record import Record
+
+
+def record_from_digitalocean(d: typing.Dict) -> Record:
+    if d['type'] == 'SRV':
+        raise ValueError('SRV records are not supported by this tool at this time.')
+
+    prior = None
+    if 'priority' in d:
+        prior = str(d['priority'])
+
+    if d['type'] == 'CAA':
+        return Record(
+            name=d['name'],
+            type=d['type'],
+            data='{:d} {:s} {:s}'.format(d['flags'], d['tag'], d['data']),
+            ttl=str(d['ttl']),
+            priority=prior,
+        )
+
+    return Record(
+        name=d['name'],
+        type=d['type'],
+        data=d['data'],
+        ttl=str(d['ttl']),
+        priority=prior,
+    )
+
 
 
 class HTTPBearerAuth(requests.auth.AuthBase):
@@ -22,7 +52,7 @@ class HTTPBearerAuth(requests.auth.AuthBase):
         return r
 
 
-class DigitalOceanAPI(object):
+class DigitalOceanAPI(Client):
     _API_BASE = 'https://api.digitalocean.com/v2'
     logRatelimit: bool
 
@@ -70,22 +100,22 @@ class DigitalOceanAPI(object):
     def check_auth(self):
         return self._get_decoded('account')
 
-    def get_all_domains(self):
+    def get_all_domains(self) -> typing.Generator[str, None, None]:
         page = 0
         more = True
         while more:
             page += 1
             resp = self._get_decoded('domains', params={'page': page})
             for d in resp['domains']:
-                yield d
+                yield d['name']
             more = resp.get('links', {}).get('pages', {}).get('next') is not None
 
-    def get_all_dns_records(self, domain):
+    def get_all_dns_records(self, domain: str) -> typing.Generator[Record, None, None]:
         page = 0
         more = True
         while more:
             page += 1
             resp = self._get_decoded('domains/{name:s}/records'.format(name=domain), params={'page': page})
             for r in resp['domain_records']:
-                yield r
+                yield record_from_digitalocean(r)
             more = resp.get('links', {}).get('pages', {}).get('next') is not None
