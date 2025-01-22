@@ -10,7 +10,7 @@ from dns import resolver
 from dotenv import load_dotenv
 from termcolor import cprint
 
-from audits import rdns, caa
+from audits import rdns, caa, cname
 from digitalocean_api import DigitalOceanAPI
 from eprint import eprint
 from exc import AuthException, APIException
@@ -52,7 +52,8 @@ class Auditor(object):
         all_records = [record_from_digitalocean(r) for r in self._do_api.get_all_dns_records(domain_name)]
 
         retv = rdns.audit(policy['rdns'], self._resolver, self._verbose, all_records) \
-            and caa.audit(policy['caa'], self._verbose, all_records)
+            and caa.audit(policy['caa'], self._verbose, all_records) \
+            and cname.audit(self._resolver, self._verbose, all_records)
 
         if retv:
             cprint("... OK", 'green')
