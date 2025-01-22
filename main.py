@@ -4,26 +4,32 @@ import argparse
 import configparser
 import os
 import sys
+import typing
+from typing import Optional
 
 from dns import resolver
 from dotenv import load_dotenv
 from termcolor import cprint
 
-from audits import rdns
+from audits import rdns, caa
 from digitalocean_api import DigitalOceanAPI
 from eprint import eprint
 from exc import AuthException, APIException
+from record import record_from_digitalocean
 
 
 class Auditor(object):
-    verbose: bool
+    _policy: configparser.ConfigParser
+    _verbose: bool
+    _resolver: resolver.Resolver
+    _do_api: typing.Optional[DigitalOceanAPI]
 
-    def __init__(self, policy, do_api_instance):
-        self.policy = policy
-        self.do_api = do_api_instance
-        self.verbose = False
-        self.resolver = resolver.Resolver(configure=False)
-        self.resolver.nameservers = [
+    def __init__(self, policy: configparser.ConfigParser, do_api_instance: DigitalOceanAPI):
+        self._policy = policy
+        self._do_api = do_api_instance
+        self._verbose = False
+        self._resolver = resolver.Resolver(configure=False)
+        self._resolver.nameservers = [
             '8.8.8.8', '1.1.1.1',
             '2001:4860:4860::8888', '2606:4700:4700::1111',
         ]
@@ -32,7 +38,7 @@ class Auditor(object):
         """
         Returns False if any anomalies were found; True otherwise.
         """
-        domain_names = [d['name'] for d in self.do_api.get_all_domains()]
+        domain_names = [d['name'] for d in self._do_api.get_all_domains()]
         retv = True
         for n in domain_names:
             retv = retv & self.audit(n)
@@ -43,11 +49,16 @@ class Auditor(object):
         Returns False if any anomalies were found; True otherwise.
         """
         cprint("Auditing {:s} ...".format(domain_name), 'white')
-        all_records = self.do_api.get_all_dns_records(domain_name)
-        retv = True
-        retv = retv and rdns.audit(policy['rdns'], self.resolver, self.verbose, all_records)
+
+        all_records = [record_from_digitalocean(r) for r in self._do_api.get_all_dns_records(domain_name)]
+
+        retv = rdns.audit(policy['rdns'], self._resolver, self._verbose, all_records) \
+            and caa.audit(policy['caa'], self._verbose, all_records)
+
         if retv:
-            cprint("... ok", 'green')
+            cprint("... OK", 'green')
+        else:
+            cprint("... FAIL", 'red')
         return retv
 
 
@@ -110,6 +121,10 @@ if __name__ == '__main__':
     policy = configparser.ConfigParser()
     policy['rdns'] = {
         'FailOnMissingPTR': 'no',
+    }
+    policy['caa'] = {
+        'RequireIssue': 'no',
+        'RequireIodef': 'no',
     }
     if args.policy:
         policy.read(args.policy)
