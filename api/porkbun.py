@@ -6,7 +6,9 @@ from api.client import Client
 from normalizedrecord import NormalizedRecord
 
 
-def record_from_porkbun(domainname: str, r: pkb_client.client.DNSRecord) -> NormalizedRecord:
+def record_from_porkbun(
+    domainname: str, r: pkb_client.client.DNSRecord
+) -> NormalizedRecord:
     if r.type == "SRV":
         raise ValueError("SRV records are not supported by this tool at this time.")
 
