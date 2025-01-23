@@ -7,12 +7,12 @@ from normalizedrecord import NormalizedRecord
 
 
 def record_from_porkbun(r: pkb_client.client.DNSRecord) -> NormalizedRecord:
-    if r.type == 'SRV':
-        raise ValueError('SRV records are not supported by this tool at this time.')
+    if r.type == "SRV":
+        raise ValueError("SRV records are not supported by this tool at this time.")
 
     n = r.name
     if not n:
-        n = '@'
+        n = "@"
 
     prior = None
     if r.prio:
@@ -45,6 +45,8 @@ class PorkbunAPI(Client):
                 yield d.domain
             more = len(domains) > 0
 
-    def get_all_dns_records(self, domain: str) -> typing.Generator[NormalizedRecord, None, None]:
+    def get_all_dns_records(
+        self, domain: str
+    ) -> typing.Generator[NormalizedRecord, None, None]:
         for r in self._client.get_dns_records(domain):
             yield record_from_porkbun(r)

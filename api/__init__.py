@@ -1,6 +1,6 @@
 __all__ = [
-    'digitalocean',
-    'client',
-    'porkbun',
-    'namecom',
+    "digitalocean",
+    "client",
+    "porkbun",
+    "namecom",
 ]

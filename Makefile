@@ -5,6 +5,11 @@ VIRTUALENV_DIR=venv
 help: # via https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 	@grep -E '^[a-zA-Z_/-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
+.PHONY: fmt
+fmt: ## Format (Python, Prettier)
+	ruff format
+	prettier --write .
+
 .PHONY: dev/bootstrap
 dev/bootstrap: ## Set up local virtualenv
 	@virtualenv --python=python3 $(VIRTUALENV_DIR)
