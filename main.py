@@ -10,12 +10,11 @@ from dotenv import load_dotenv
 from termcolor import cprint
 
 from api.client import Client
-from api.digitalocean import DigitalOceanAPI
+from api.digitalocean import DigitalOceanAPI, AuthException, APIException
 from api.namecom import NamecomAPI
 from api.porkbun import PorkbunAPI
 from audits import rdns, caa, cname, mail
 from eprint import eprint
-from exc import AuthException, APIException
 
 
 class Auditor(object):

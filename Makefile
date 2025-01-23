@@ -10,6 +10,12 @@ fmt: ## Format (Python, Prettier)
 	ruff format
 	prettier --write .
 
+.PHONY: lint
+lint: ## Lint (Python, Prettier, GitHub Actions)
+	ruff check
+	prettier --check .
+	actionlint .github/workflows/*.yml
+
 .PHONY: dev/bootstrap
 dev/bootstrap: ## Set up local virtualenv
 	@virtualenv --python=python3 $(VIRTUALENV_DIR)
