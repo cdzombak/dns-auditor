@@ -174,7 +174,10 @@ if __name__ == "__main__":
         "RequireDMARC": "no",
     }
     if args.policy:
-        policy.read(args.policy)
+        read_ok = policy.read(args.policy)
+        if len(read_ok) == 0:
+            eprint("Policy file not found.")
+            sys.exit(1)
 
     auditor = Auditor(policy, args.verbose, client)
 
@@ -191,11 +194,7 @@ if __name__ == "__main__":
         eprint(e.human_str)
         sys.exit(1)
     except AuthException:
-        cprint(
-            "Check your credentials and try again.",
-            "red",
-            file=sys.stderr,
-        )
+        eprint("Check your credentials and try again.")
         sys.exit(2)
 
     if not result:
