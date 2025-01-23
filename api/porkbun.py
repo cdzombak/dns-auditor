@@ -6,11 +6,11 @@ from api.client import Client
 from normalizedrecord import NormalizedRecord
 
 
-def record_from_porkbun(r: pkb_client.client.DNSRecord) -> NormalizedRecord:
+def record_from_porkbun(domainname: str, r: pkb_client.client.DNSRecord) -> NormalizedRecord:
     if r.type == "SRV":
         raise ValueError("SRV records are not supported by this tool at this time.")
 
-    n = r.name
+    n = r.name.removesuffix(domainname).strip(".")
     if not n:
         n = "@"
 
@@ -49,4 +49,4 @@ class PorkbunAPI(Client):
         self, domain: str
     ) -> typing.Generator[NormalizedRecord, None, None]:
         for r in self._client.get_dns_records(domain):
-            yield record_from_porkbun(r)
+            yield record_from_porkbun(domain, r)
