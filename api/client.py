@@ -1,7 +1,7 @@
 import typing
 from abc import ABC, abstractmethod
 
-from record import Record
+from normalizedrecord import NormalizedRecord
 
 
 class Client(ABC):
@@ -11,5 +11,5 @@ class Client(ABC):
         pass
 
     @abstractmethod
-    def get_all_dns_records(self, domain: str) -> typing.Generator[Record, None, None]:
+    def get_all_dns_records(self, domain: str) -> typing.Generator[NormalizedRecord, None, None]:
         pass

@@ -11,6 +11,7 @@ from termcolor import cprint
 
 from api.client import Client
 from api.digitalocean import DigitalOceanAPI
+from api.namecom import NamecomAPI
 from api.porkbun import PorkbunAPI
 from audits import rdns, caa, cname, mail
 from eprint import eprint
@@ -48,13 +49,13 @@ class Auditor(object):
         Returns False if any failures or anomalies were found; True otherwise.
         """
         cprint("Auditing {:s} ...".format(d), 'white')
-
+        retv = True
         all_records = list(self._api_client.get_all_dns_records(d))
 
-        retv = rdns.audit(policy['rdns'], self._resolver, self._verbose, all_records) \
-            and mail.audit(policy['mail'], self._resolver, self._verbose, all_records) \
-            and caa.audit(policy['caa'], self._verbose, all_records) \
-            and cname.audit(self._resolver, self._verbose, all_records)
+        retv = retv & rdns.audit(policy['rdns'], self._resolver, self._verbose, all_records)
+        retv = retv & mail.audit(policy['mail'], self._resolver, self._verbose, all_records)
+        retv = retv & caa.audit(policy['caa'], self._verbose, all_records)
+        retv = retv & cname.audit(self._resolver, self._verbose, all_records)
 
         if retv:
             cprint("... OK", 'green')
@@ -78,7 +79,7 @@ if __name__ == '__main__':
     parser.add_argument('--policy', type=str,
                         help="INI policy file.")
     parser.add_argument('--host', type=str, default='do',
-                        help="Hosting service for your DNS records. One of: do (DigitalOcean), pb (Porkbun).")
+                        help="Hosting service for your DNS records. One of: do (DigitalOcean), pb (Porkbun), nc (Name.com).")
     args = parser.parse_args()
 
     client = None
@@ -121,6 +122,17 @@ if __name__ == '__main__':
             eprint("Copy .env.sample to .env and fill it out to provide credentials.")
             sys.exit(2)
         client = PorkbunAPI(pb_api_key, pb_secret_key)
+    elif args.host == 'nc':
+        nc_username = os.getenv('NAMECOM_USERNAME')
+        nc_tok = os.getenv('NAMECOM_API_TOKEN')
+        if not nc_username or not nc_tok:
+            cprint(
+                "Name.com username and API token must be set using environment variables.",
+                'red', file=sys.stderr,
+            )
+            eprint("Copy .env.sample to .env and fill it out to provide credentials.")
+            sys.exit(2)
+        client = NamecomAPI(nc_username, nc_tok)
 
     if not client:
         eprint("Invalid --host given.")

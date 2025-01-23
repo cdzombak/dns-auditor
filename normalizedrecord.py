@@ -2,7 +2,7 @@ import typing
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
-class Record(object):
+class NormalizedRecord(object):
     name: str
     type: str
     data: str

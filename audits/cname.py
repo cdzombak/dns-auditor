@@ -4,10 +4,10 @@ import dns
 from dns import resolver
 from termcolor import cprint
 
-from record import Record
+from normalizedrecord import NormalizedRecord
 
 
-def audit(res: resolver.Resolver, verbose: bool, records: typing.Iterable[Record]) -> bool:
+def audit(res: resolver.Resolver, verbose: bool, records: typing.Iterable[NormalizedRecord]) -> bool:
     """
     Checks whether CNAME records point to names with A records.
     Returns False if any failures were found; True otherwise.

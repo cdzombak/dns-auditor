@@ -4,10 +4,10 @@ import typing
 import validators
 from termcolor import cprint
 
-from record import Record
+from normalizedrecord import NormalizedRecord
 
 
-def audit(policy: configparser.SectionProxy, verbose: bool, records: typing.Iterable[Record]) -> bool:
+def audit(policy: configparser.SectionProxy, verbose: bool, records: typing.Iterable[NormalizedRecord]) -> bool:
     """
     Checks whether CAA records are valid.
     If specified by policy, requires issue and iodef fields to be present.

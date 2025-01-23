@@ -6,10 +6,10 @@ import requests
 from api.client import Client
 from eprint import eprint
 from exc import AuthException, APIException
-from record import Record
+from normalizedrecord import NormalizedRecord
 
 
-def record_from_digitalocean(d: typing.Dict) -> Record:
+def record_from_digitalocean(d: typing.Dict) -> NormalizedRecord:
     if d['type'] == 'SRV':
         raise ValueError('SRV records are not supported by this tool at this time.')
 
@@ -18,7 +18,7 @@ def record_from_digitalocean(d: typing.Dict) -> Record:
         prior = str(d['priority'])
 
     if d['type'] == 'CAA':
-        return Record(
+        return NormalizedRecord(
             name=d['name'],
             type=d['type'],
             data='{:d} {:s} {:s}'.format(d['flags'], d['tag'], d['data']),
@@ -26,7 +26,7 @@ def record_from_digitalocean(d: typing.Dict) -> Record:
             priority=prior,
         )
 
-    return Record(
+    return NormalizedRecord(
         name=d['name'],
         type=d['type'],
         data=d['data'],
@@ -110,7 +110,7 @@ class DigitalOceanAPI(Client):
                 yield d['name']
             more = resp.get('links', {}).get('pages', {}).get('next') is not None
 
-    def get_all_dns_records(self, domain: str) -> typing.Generator[Record, None, None]:
+    def get_all_dns_records(self, domain: str) -> typing.Generator[NormalizedRecord, None, None]:
         page = 0
         more = True
         while more:
