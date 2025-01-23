@@ -79,7 +79,7 @@ if __name__ == "__main__":
         "--domain",
         type=str,
         help="The domain to audit. "
-        "If left empty, all domains in the account will be audited.",
+        "If not given, all domains in the account will be audited.",
     )
     parser.add_argument(
         "--debug-log-ratelimit",
