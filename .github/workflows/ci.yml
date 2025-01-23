@@ -206,14 +206,7 @@ jobs:
     name: Ntfy
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
-    needs:
-      [
-        meta,
-        lint,
-        docker,
-        release,
-        tags,
-      ]
+    needs: [meta, lint, docker, release, tags]
     steps:
       - name: Send success notification
         uses: niniyas/ntfy-action@master

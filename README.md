@@ -7,7 +7,7 @@ Check your DNS records for a variety of potential issues.
 - **CAA:** Checks that extant CAA records are valid. If specified by policy, requires `issue` and `iodef` fields to be present.
 - **CNAME:** Checks that CNAME records point to names that have resolvable A records.
 - **Mail:** Checks that MX records point to names that have resolvable A records. Partially validates DMARC records, if present. If specified by policy, requires domains with MX records to have SPF and DMARC records.
-- **rDNS:** Checks that reverse DNS for the IPs that A/AAAA records point to resolve to the same domain. 
+- **rDNS:** Checks that reverse DNS for the IPs that A/AAAA records point to resolve to the same domain.
 
 ## Supported DNS Hosts
 
@@ -92,6 +92,7 @@ Then, activate the virtualenv and run `main.py`:
 ```
 
 Alternatively, run `main.py` via the venv's Python interpreter directly:
+
 ```
 ./venv/bin/python ./main.py --host pb --domain dzombak.com
 ```
