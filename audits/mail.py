@@ -69,11 +69,14 @@ def audit(
             has_rua = False
             for pair in parts:
                 pair = pair.strip()
+                if not pair:
+                    continue
                 pair_parts = pair.split("=")
                 if len(pair_parts) != 2:
                     cprint(
-                        "[!] {recname:s}: DMARC {recdat:s} is invalid".format(
-                            recname=r.name, recdat=r.data
+                        "[!] {recname:s}: DMARC pair {pair:s} is invalid".format(
+                            recname=r.name,
+                            pair=pair,
                         ),
                         "red",
                     )
