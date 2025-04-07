@@ -1,7 +1,7 @@
 dnspython==2.7.0
 python-dotenv==1.1.0
 requests==2.32.3
-termcolor==2.5.0
+termcolor==3.0.1
 validators==0.34.0
 pkb_client==2.0.0
 pynamecom==0.1.4
