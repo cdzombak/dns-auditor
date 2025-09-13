@@ -102,10 +102,14 @@ def audit(
             # Check against allowlist if configured
             allowlist_config = policy.get("IodefAllowlist", fallback="").strip()
             if allowlist_config:
-                allowlist = [addr.strip() for addr in allowlist_config.split(",") if addr.strip()]
+                allowlist = [
+                    addr.strip() for addr in allowlist_config.split(",") if addr.strip()
+                ]
                 if allowlist and value not in allowlist:
                     # Also check without mailto: prefix for email addresses
-                    email_value = value[7:] if value.lower().startswith("mailto:") else value
+                    email_value = (
+                        value[7:] if value.lower().startswith("mailto:") else value
+                    )
                     if email_value not in allowlist:
                         cprint(
                             "[!] {n:s}: CAA iodef address not in allowlist: {data:s}".format(
