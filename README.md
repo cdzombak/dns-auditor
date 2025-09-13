@@ -55,6 +55,7 @@ Certain checks can be customized with a policy file. See [`policy.ini.sample`](p
 
 - `RequireIssue`: If `true`, requires that the domain has a CAA record with an `issue` or `issuewild` field.
 - `RequireIodef`: If `true`, requires that the domain has a CAA record with an `iodef` field.
+- `IodefAllowlist`: Comma-separated list of allowed `iodef` addresses (email addresses or URLs). If specified, CAA `iodef` records must contain values from this allowlist. Leave empty or omit to allow any valid `iodef` address.
 
 #### Mail
 
