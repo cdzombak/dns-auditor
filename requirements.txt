@@ -3,5 +3,5 @@ python-dotenv==1.1.0
 requests==2.32.5
 termcolor==2.5.0
 validators==0.34.0
-pkb_client==2.0.0
+pkb_client==2.2.0
 pynamecom==0.1.4
